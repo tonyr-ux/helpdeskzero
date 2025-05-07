@@ -27,6 +27,7 @@ import { FeatherDownload } from "@subframe/core";
 import { FeatherClock } from "@subframe/core";
 import { TicketDrawer, TicketData } from "./components/TicketDrawer";
 import TriggerCreationPage from "./pages/TriggerCreationPage";
+import EmailContentPage from "./pages/EmailContentPage";
 
 function HelpdeskApp() {
   const navigate = useNavigate();
@@ -1404,6 +1405,7 @@ export function App() {
       <Routes>
         <Route path="/" element={<HelpdeskApp />} />
         <Route path="/triggers" element={<TriggerCreationPage />} />
+        <Route path="/email-content" element={<EmailContentPage />} />
       </Routes>
     </BrowserRouter>
   );

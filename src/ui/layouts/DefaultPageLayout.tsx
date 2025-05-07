@@ -13,6 +13,8 @@ import { FeatherFile } from "@subframe/core";
 import { FeatherContact } from "@subframe/core";
 import { FeatherLineChart } from "@subframe/core";
 import { FeatherInbox } from "@subframe/core";
+import { FeatherSend } from "@subframe/core";
+import { Link } from "react-router-dom";
 
 interface DefaultPageLayoutRootProps
   extends React.HTMLAttributes<HTMLDivElement> {
@@ -60,6 +62,12 @@ const DefaultPageLayoutRoot = React.forwardRef<
         <XelixSidebar.NavItem icon={<FeatherInbox />}>
           Helpdesk
         </XelixSidebar.NavItem>
+        <div className="flex-grow" />
+        <Link to="/email-content" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <XelixSidebar.NavItem icon={<FeatherSend />} className="group-hover/abb5de8b:justify-start">
+            <span className="hidden group-hover/abb5de8b:inline">Email Content</span>
+          </XelixSidebar.NavItem>
+        </Link>
       </XelixSidebar>
       {children ? (
         <div className="flex grow shrink-0 basis-0 flex-col items-start gap-4 self-stretch overflow-y-auto bg-default-background">
