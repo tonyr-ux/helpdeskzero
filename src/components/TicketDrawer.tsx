@@ -18,8 +18,6 @@ import { FeatherZap } from "@subframe/core";
 import { FeatherMoreHorizontal } from "@subframe/core";
 import { FeatherTrash } from "@subframe/core";
 import { TextField } from "@/ui/components/TextField";
-import { FeatherSearch } from "@subframe/core";
-import { IconWithBackground } from "@/ui/components/IconWithBackground";
 import { FeatherSend } from "@subframe/core";
 import { FeatherEdit } from "@subframe/core";
 
@@ -83,7 +81,51 @@ Please let me know if you have any additional information that might help us res
 
 Best regards,
 ${ticket?.assignedTo.name}`
-      : `Hi ${ticket?.sender.name},
+      : ''
+  );
+  const [isEditing, setIsEditing] = useState(true);
+  const [chatInput, setChatInput] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const suggestionsRef = React.useRef<HTMLDivElement>(null);
+  const [chatMessages, setChatMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([
+    {
+      role: 'assistant',
+      content: "Hello! I'm your AI assistant. How can I help you with this ticket?"
+    }
+  ]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!suggestionsRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - suggestionsRef.current.offsetLeft);
+    setScrollLeft(suggestionsRef.current.scrollLeft);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !suggestionsRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - suggestionsRef.current.offsetLeft;
+    const walk = (x - startX) * 2;
+    suggestionsRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  if (!ticket) return null;
+
+  const handleSendMessage = () => {
+    if (!chatInput.trim()) return;
+
+    // Add user message
+    setChatMessages(prev => [...prev, { role: 'user', content: chatInput }]);
+
+    // Handle draft reply request
+    if (chatInput.toLowerCase().includes('draft a reply')) {
+      const newDraftReply = `Hi ${ticket?.sender.name},
 
 Thank you for reaching out regarding ${ticket?.subject.toLowerCase()}. I understand your concern and will help you resolve this matter.
 
@@ -102,15 +144,19 @@ ${ticket?.priority === "Urgent"
 Please let me know if you have any additional information that might help us resolve this more efficiently.
 
 Best regards,
-${ticket?.assignedTo.name}`
-  );
-  const [isEditing, setIsEditing] = useState(true);
+${ticket?.assignedTo.name}`;
 
-  if (!ticket) return null;
+      setDraftReply(newDraftReply);
+      setIsEditing(true);
+      
+      // Add assistant response
+      setChatMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: "I've drafted a reply based on the ticket details. You can find it in the draft section above. Feel free to edit it before sending."
+      }]);
+    }
 
-  const handleSendReply = () => {
-    // TODO: Implement send reply logic
-    setIsEditing(false);
+    setChatInput('');
   };
 
   const handleDiscardReply = () => {
@@ -234,7 +280,10 @@ ${ticket?.assignedTo.name}`
                     <Button
                       variant="brand-primary"
                       icon={<FeatherSend />}
-                      onClick={handleSendReply}
+                      onClick={() => {
+                        // TODO: Handle sending message
+                        setIsEditing(false);
+                      }}
                     >
                       Send Reply
                     </Button>
@@ -308,10 +357,7 @@ ${ticket?.assignedTo.name}`
             <div className="flex w-full items-center justify-between border-b border-solid border-neutral-border pb-4">
               <div className="flex items-center gap-4">
                 <span className="text-body-bold font-body-bold text-default-font">
-                  Activity
-                </span>
-                <span className="text-body-bold font-body-bold text-subtext-color">
-                  Comments (0)
+                  AI Assistant
                 </span>
               </div>
               <IconButton
@@ -319,55 +365,108 @@ ${ticket?.assignedTo.name}`
                 onClick={() => onOpenChange(false)}
               />
             </div>
-            <TextField
-              className="h-auto w-full flex-none"
-              variant="filled"
-              label=""
-              helpText=""
-              icon={<FeatherSearch />}
-            >
-              <TextField.Input
-                placeholder="Search Activity"
-                value=""
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => {}}
-              />
-            </TextField>
-            <div className="flex w-full grow shrink-0 basis-0 flex-col items-start gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-body-bold font-body-bold text-default-font">
-                  {ticket.date}
-                </span>
-                <IconButton
-                  icon={<FeatherChevronDown />}
-                  onClick={(event: React.MouseEvent<HTMLButtonElement>) => {}}
-                />
-              </div>
+            <div className="flex w-full grow shrink-0 basis-0 flex-col items-start gap-4 overflow-auto">
               <div className="flex w-full flex-col items-start gap-4">
-                {ticket.activities.map((activity, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <IconWithBackground icon={activity.icon} />
-                    <div className="flex flex-col items-start">
+                {chatMessages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={`flex w-full items-start gap-4 ${
+                      message.role === 'assistant' ? 'justify-start' : 'justify-end'
+                    }`}
+                  >
+                    <div
+                      className={`flex max-w-[80%] flex-col items-start gap-2 rounded-lg p-4 ${
+                        message.role === 'assistant' 
+                          ? 'bg-neutral-50' 
+                          : 'bg-brand-50'
+                      }`}
+                    >
                       <span className="text-body font-body text-default-font">
-                        {activity.description}
-                      </span>
-                      <span className="text-caption font-caption text-subtext-color">
-                        {activity.date}
+                        {message.content}
                       </span>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
+            <div className="flex w-full flex-col items-start gap-2 pt-4 border-t border-solid border-neutral-border bg-default-background sticky bottom-0">
+              <div 
+                ref={suggestionsRef}
+                className="flex w-full overflow-x-auto gap-2 pb-2 cursor-grab active:cursor-grabbing select-none"
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+              >
+                <div className="flex items-center gap-2 min-w-max">
+                  <Button
+                    variant="neutral-secondary"
+                    size="small"
+                    onClick={() => setChatInput('Draft a reply to this ticket')}
+                  >
+                    Draft a reply
+                  </Button>
+                  <Button
+                    variant="neutral-secondary"
+                    size="small"
+                    onClick={() => setChatInput('Recategorise this ticket')}
+                  >
+                    Recategorise
+                  </Button>
+                  <Button
+                    variant="neutral-secondary"
+                    size="small"
+                    onClick={() => setChatInput('Assign ticket to')}
+                  >
+                    Assign ticket to
+                  </Button>
+                  <Button
+                    variant="neutral-secondary"
+                    size="small"
+                    onClick={() => setChatInput('Update priority to')}
+                  >
+                    Update priority
+                  </Button>
+                </div>
+              </div>
+              <div className="flex w-full items-center gap-2">
+                <TextField
+                  className="grow shrink-0 basis-0"
+                  variant="filled"
+                  label=""
+                  helpText=""
+                >
+                  <TextField.Input
+                    placeholder="Type your message..."
+                    value={chatInput}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                      setChatInput(event.target.value);
+                    }}
+                    onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
+                      if (event.key === 'Enter') {
+                        handleSendMessage();
+                      }
+                    }}
+                  />
+                </TextField>
+                <Button
+                  icon={<FeatherSend />}
+                  onClick={handleSendMessage}
+                >
+                  Send
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
         <div className="flex w-full items-center gap-2 border-t border-solid border-neutral-border px-4 py-4">
-          <Button
-            icon={<FeatherZap />}
-            onClick={(event: React.MouseEvent<HTMLButtonElement>) => {}}
-          >
-            Generate Reply
-          </Button>
-          <div className="flex grow shrink-0 basis-0 items-center justify-end gap-2">
+          <div className="flex items-center gap-2">
+            <Button
+              icon={<FeatherZap />}
+              onClick={(event: React.MouseEvent<HTMLButtonElement>) => {}}
+            >
+              Generate Reply
+            </Button>
             <Button
               variant="neutral-primary"
               onClick={(event: React.MouseEvent<HTMLButtonElement>) => {}}
