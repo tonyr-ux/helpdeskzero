@@ -10,6 +10,7 @@ import { FeatherSearch } from "@subframe/core";
 import { FeatherSend } from "@subframe/core";
 import { Table } from "@/ui/components/Table";
 import { TriggerDrawer } from "../components/TriggerDrawer";
+import { Link } from "react-router-dom";
 
 interface Trigger {
   id: string;
@@ -262,7 +263,9 @@ THEN
       <div className="flex h-full w-full flex-col items-start gap-6 bg-default-background px-6 py-6 mobile:container mobile:max-w-none">
         <div className="flex w-full flex-col items-start">
           <Breadcrumbs>
-            <Breadcrumbs.Item>Automation</Breadcrumbs.Item>
+            <Breadcrumbs.Item>
+              <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>Helpdesk Zero</Link>
+            </Breadcrumbs.Item>
             <Breadcrumbs.Divider />
             <Breadcrumbs.Item active={true}>Prompt Triggers</Breadcrumbs.Item>
           </Breadcrumbs>

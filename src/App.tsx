@@ -79,14 +79,24 @@ function HelpdeskApp() {
   };
 
   const handleMoveToCompleted = (ticket: TicketData, action: 'yes' | 'no') => {
+    // Remove from active list
     setActiveTicketsList(prev => prev.filter(t => t.id !== ticket.id));
-    setCompletedTicketsList(prev => [{
+    
+    // Add to completed list with action taken
+    const completedTicket = {
       ...ticket,
       actionTaken: action === 'yes' ? 'Approved' : 'Rejected'
-    }, ...prev]);
+    };
+    setCompletedTicketsList(prev => [completedTicket, ...prev]);
+    
+    // Add to acknowledged tickets
+    const newAcknowledged = new Set(acknowledgedTickets);
+    newAcknowledged.add(ticket.id);
+    setAcknowledgedTickets(newAcknowledged);
   };
 
   const getActionRequired = (ticket: TicketData): string => {
+    if (ticket.hasDraft) return "Needs reply";
     if (ticket.category === "Invoice Query") return "Send payment status";
     if (ticket.category === "Statement Query") return "Export statement";
     if (ticket.category === "Payment Terms") return "Approve terms";
@@ -1036,6 +1046,8 @@ Vendor Management Team`,
     setCompletedTicketsList(completedTickets);
   }, []);
 
+  const activeTicketsCount = activeTicketsList.length + completedTicketsList.length - acknowledgedTickets.size;
+
   return (
     <div className="app">
       <DefaultPageLayout>
@@ -1061,7 +1073,7 @@ Vendor Management Team`,
           <div className="flex w-full flex-col items-start gap-4">
             <div className="flex w-full flex-wrap items-center justify-between">
               <span className="text-heading-3 font-heading-3 text-default-font">
-                Inbox (23)
+                Inbox ({activeTicketsCount})
               </span>
               <div className="flex items-center gap-4">
                 <TextField
