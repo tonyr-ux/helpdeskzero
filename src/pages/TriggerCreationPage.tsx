@@ -4,14 +4,11 @@ import React, { useState } from "react";
 import { DefaultPageLayout } from "@/ui/layouts/DefaultPageLayout";
 import { Breadcrumbs } from "@/ui/components/Breadcrumbs";
 import { TextField } from "@/ui/components/TextField";
-import { TextArea } from "@/ui/components/TextArea";
 import { Switch } from "@/ui/components/Switch";
 import { Button } from "@/ui/components/Button";
-import { FeatherPlus } from "@subframe/core";
 import { FeatherSearch } from "@subframe/core";
 import { FeatherSend } from "@subframe/core";
 import { Table } from "@/ui/components/Table";
-import { Badge } from "@/ui/components/Badge";
 import { TriggerDrawer } from "../components/TriggerDrawer";
 
 interface Trigger {

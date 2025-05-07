@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { DefaultPageLayout } from "@/ui/layouts/DefaultPageLayout";
 import { Button } from "@/ui/components/Button";
@@ -37,7 +37,7 @@ function HelpdeskApp() {
   const navigate = useNavigate();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<TicketData | undefined>();
-  const [activeTab, setActiveTab] = useState<'needs-reply' | 'pending' | 'completed'>('needs-reply');
+  const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
   const [selectedTickets, setSelectedTickets] = useState<Set<string>>(new Set());
   const [acknowledgedTickets, setAcknowledgedTickets] = useState<Set<string>>(new Set());
 
@@ -81,6 +81,26 @@ function HelpdeskApp() {
 
   const handleSettingsClick = () => {
     navigate('/triggers');
+  };
+
+  const handleMoveToCompleted = (ticket: TicketData, action: 'yes' | 'no') => {
+    setActiveTicketsList(prev => prev.filter(t => t.id !== ticket.id));
+    setCompletedTicketsList(prev => [{
+      ...ticket,
+      actionTaken: action === 'yes' ? 'Approved' : 'Rejected'
+    }, ...prev]);
+  };
+
+  const getActionRequired = (ticket: TicketData): string => {
+    if (ticket.category === "Invoice Query") return "Send payment status";
+    if (ticket.category === "Statement Query") return "Export statement";
+    if (ticket.category === "Payment Terms") return "Approve terms";
+    if (ticket.category === "Vendor Setup") return "Review application";
+    if (ticket.category === "Overdue Payment") return "Send reminder";
+    if (ticket.category === "License Renewal") return "Process renewal";
+    if (ticket.category === "Account Setup") return "Create account";
+    if (ticket.category === "System Maintenance") return "Schedule maintenance";
+    return "Review request";
   };
 
   const tickets: TicketData[] = [
@@ -1013,30 +1033,13 @@ Vendor Management Team`,
     }
   ];
 
-  const [pendingTicketsList, setPendingTicketsList] = useState<TicketData[]>(pendingTickets);
-  const [completedTicketsList, setCompletedTicketsList] = useState<TicketData[]>(completedTickets);
+  const [activeTicketsList, setActiveTicketsList] = useState<TicketData[]>([]);
+  const [completedTicketsList, setCompletedTicketsList] = useState<TicketData[]>([]);
 
-  const handleMoveToCompleted = (ticket: TicketData) => {
-    const actionTaken = ticket.category === "Invoice Query" ? "Invoice processed" :
-                       ticket.category === "Payment Terms" ? "Terms updated" :
-                       ticket.category === "Statement Query" ? "Statement reviewed" :
-                       "Action completed";
-
-    const updatedTicket = {
-      ...ticket,
-      actionTaken,
-      date: new Date().toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }).replace(',', ' -')
-    };
-
-    setPendingTicketsList(prev => prev.filter(t => t.id !== ticket.id));
-    setCompletedTicketsList(prev => [updatedTicket, ...prev]);
-  };
+  useEffect(() => {
+    setActiveTicketsList([...tickets, ...pendingTickets]);
+    setCompletedTicketsList(completedTickets);
+  }, []);
 
   return (
     <div className="app">
@@ -1089,57 +1092,61 @@ Vendor Management Team`,
             </div>
             <Tabs>
               <Tabs.Item 
-                active={activeTab === 'needs-reply'} 
+                active={activeTab === 'active'} 
                 icon={<FeatherMail />}
-                onClick={() => setActiveTab('needs-reply')}
-              >
-                Needs Reply
-              </Tabs.Item>
-              <Tabs.Item 
-                active={activeTab === 'pending'} 
-                icon={<FeatherClock4 />}
-                onClick={() => setActiveTab('pending')}
+                onClick={() => setActiveTab('active')}
               >
                 Pending
               </Tabs.Item>
               <Tabs.Item 
                 active={activeTab === 'completed'}
+                icon={<FeatherCheckCircle />}
                 onClick={() => setActiveTab('completed')}
               >
                 Completed
               </Tabs.Item>
             </Tabs>
             <div className="flex w-full flex-col items-start border-t border-solid border-neutral-border pt-0.5 overflow-auto">
-              {activeTab === 'needs-reply' && (
+              {activeTab === 'active' && (
                 <Table
                   header={
                     <Table.HeaderRow>
                       <Table.HeaderCell className="w-12">
                         <input
                           type="checkbox"
-                          checked={selectedTickets.size === tickets.length}
-                          onChange={() => handleSelectAll(tickets)}
+                          checked={selectedTickets.size === activeTicketsList.length}
+                          onChange={() => handleSelectAll(activeTicketsList)}
                           className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
                       </Table.HeaderCell>
                       <Table.HeaderCell>Subject</Table.HeaderCell>
                       <Table.HeaderCell>Assigned to</Table.HeaderCell>
+                      <Table.HeaderCell>Action Required</Table.HeaderCell>
                       <Table.HeaderCell>Category</Table.HeaderCell>
                       <Table.HeaderCell>Priority</Table.HeaderCell>
                       <Table.HeaderCell>Draft created</Table.HeaderCell>
                       <Table.HeaderCell className="h-8 w-auto flex-none">
-                        Archive
+                        Actions
                       </Table.HeaderCell>
-                      <Table.HeaderCell className="h-8 w-auto flex-none">
-                        Delete from list
-                      </Table.HeaderCell>
-                      <Table.HeaderCell className="h-8 w-auto flex-none" />
                     </Table.HeaderRow>
                   }
                 >
-                  {tickets.map((ticket) => (
-                    <Table.Row key={ticket.id}>
-                      <Table.Cell className="w-12">
+                  {activeTicketsList.map((ticket) => (
+                    <Table.Row 
+                      key={ticket.id}
+                      onClick={(e) => {
+                        // Don't open drawer if clicking on buttons or checkbox
+                        if (
+                          e.target instanceof HTMLElement &&
+                          (e.target.closest('button') || e.target.closest('input[type="checkbox"]'))
+                        ) {
+                          return;
+                        }
+                        handleOpenTicket(ticket);
+                      }}
+                      className="cursor-pointer hover:bg-neutral-50"
+                    >
+                      <Table.Cell>
                         <input
                           type="checkbox"
                           checked={selectedTickets.has(ticket.id)}
@@ -1148,12 +1155,9 @@ Vendor Management Team`,
                         />
                       </Table.Cell>
                       <Table.Cell>
-                        <div className="flex grow shrink-0 basis-0 flex-col items-start gap-1">
-                          <span className="w-full text-body-bold font-body-bold text-default-font">
+                        <div className="flex items-center gap-2">
+                          <span className="text-body font-body text-default-font">
                             {ticket.subject}
-                          </span>
-                          <span className="w-full text-caption font-caption text-subtext-color">
-                            {ticket.description}
                           </span>
                         </div>
                       </Table.Cell>
@@ -1161,14 +1165,18 @@ Vendor Management Team`,
                         <div className="flex items-center gap-2">
                           <Avatar
                             size="small"
-                            image="https://res.cloudinary.com/subframe/image/upload/v1711417514/shared/ubsk7cs5hnnaj798efej.jpg"
                           >
                             {ticket.assignedTo.initials}
                           </Avatar>
-                          <span className="whitespace-nowrap text-body-bold font-body-bold text-default-font">
+                          <span className="text-body font-body text-default-font">
                             {ticket.assignedTo.name}
                           </span>
                         </div>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Badge variant="warning" iconRight={<FeatherClock />}>
+                          {getActionRequired(ticket)}
+                        </Badge>
                       </Table.Cell>
                       <Table.Cell>
                         <Badge iconRight={<FeatherLayers />}>{ticket.category}</Badge>
@@ -1187,133 +1195,19 @@ Vendor Management Team`,
                           iconRight={ticket.hasDraft ? <FeatherCheckCircle /> : <FeatherX />} 
                         />
                       </Table.Cell>
-                      <Table.Cell className="h-12 w-auto flex-none">
-                        <IconButton
-                          icon={<FeatherArchive />}
-                          onClick={(event: React.MouseEvent<HTMLButtonElement>) => {}}
-                        />
-                      </Table.Cell>
-                      <Table.Cell className="h-12 w-auto flex-none">
-                        <IconButton
-                          icon={<FeatherTrash />}
-                          onClick={(event: React.MouseEvent<HTMLButtonElement>) => {}}
-                        />
-                      </Table.Cell>
-                      <Table.Cell className="h-12 w-auto flex-none">
-                        <Button
-                          onClick={() => handleOpenTicket(ticket)}
-                        >
-                          Open
-                        </Button>
-                      </Table.Cell>
-                    </Table.Row>
-                  ))}
-                </Table>
-              )}
-              {activeTab === 'pending' && (
-                <Table
-                  header={
-                    <Table.HeaderRow>
-                      <Table.HeaderCell className="w-12">
-                        <input
-                          type="checkbox"
-                          checked={selectedTickets.size === pendingTicketsList.length}
-                          onChange={() => handleSelectAll(pendingTicketsList)}
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                      </Table.HeaderCell>
-                      <Table.HeaderCell>Subject</Table.HeaderCell>
-                      <Table.HeaderCell>Assigned to</Table.HeaderCell>
-                      <Table.HeaderCell>Category</Table.HeaderCell>
-                      <Table.HeaderCell>Priority</Table.HeaderCell>
-                      <Table.HeaderCell>Draft created</Table.HeaderCell>
-                      <Table.HeaderCell className="h-8 w-auto flex-none">
-                        Archive
-                      </Table.HeaderCell>
-                      <Table.HeaderCell className="h-8 w-auto flex-none">
-                        Delete from list
-                      </Table.HeaderCell>
-                      <Table.HeaderCell className="h-8 w-auto flex-none" />
-                    </Table.HeaderRow>
-                  }
-                >
-                  {pendingTicketsList.map((ticket) => (
-                    <Table.Row key={ticket.id}>
-                      <Table.Cell className="w-12">
-                        <input
-                          type="checkbox"
-                          checked={selectedTickets.has(ticket.id)}
-                          onChange={() => handleSelectTicket(ticket.id)}
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                      </Table.Cell>
                       <Table.Cell>
-                        <div className="flex grow shrink-0 basis-0 flex-col items-start gap-1">
-                          <span className="w-full text-body-bold font-body-bold text-default-font">
-                            {ticket.subject}
-                          </span>
-                          <span className="w-full text-caption font-caption text-subtext-color">
-                            {ticket.description}
-                          </span>
-                        </div>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <div className="flex items-center gap-2">
-                          <Avatar
-                            size="small"
-                            image="https://res.cloudinary.com/subframe/image/upload/v1711417514/shared/ubsk7cs5hnnaj798efej.jpg"
-                          >
-                            {ticket.assignedTo.initials}
-                          </Avatar>
-                          <span className="whitespace-nowrap text-body-bold font-body-bold text-default-font">
-                            {ticket.assignedTo.name}
-                          </span>
-                        </div>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Badge iconRight={<FeatherLayers />}>{ticket.category}</Badge>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Badge variant={
-                          ticket.priority === 'Urgent' ? 'error' :
-                          ticket.priority === 'High' ? 'warning' :
-                          'neutral'
-                        }>
-                          {ticket.priority}
-                        </Badge>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Badge variant={ticket.hasDraft ? 'success' : 'error'} 
-                          iconRight={ticket.hasDraft ? <FeatherCheckCircle /> : <FeatherX />} 
-                        />
-                      </Table.Cell>
-                      <Table.Cell className="h-12 w-auto flex-none">
-                        <IconButton
-                          icon={<FeatherArchive />}
-                          onClick={(event: React.MouseEvent<HTMLButtonElement>) => {}}
-                        />
-                      </Table.Cell>
-                      <Table.Cell className="h-12 w-auto flex-none">
-                        <IconButton
-                          icon={<FeatherTrash />}
-                          onClick={(event: React.MouseEvent<HTMLButtonElement>) => {}}
-                        />
-                      </Table.Cell>
-                      <Table.Cell className="h-12 w-auto flex-none">
                         <div className="flex items-center gap-2">
                           <Button
                             variant="brand-primary"
-                            icon={<FeatherCheck />}
-                            onClick={() => handleMoveToCompleted(ticket)}
+                            onClick={() => handleMoveToCompleted(ticket, 'yes')}
                           >
-                            Yes
+                            Mark as complete
                           </Button>
                           <Button
-                            variant="neutral-secondary"
-                            icon={<FeatherX />}
-                            onClick={() => {}}
+                            variant="destructive-primary"
+                            onClick={() => handleMoveToCompleted(ticket, 'no')}
                           >
-                            No
+                            No action
                           </Button>
                         </div>
                       </Table.Cell>
@@ -1349,7 +1243,20 @@ Vendor Management Team`,
                   }
                 >
                   {completedTicketsList.map((ticket) => (
-                    <Table.Row key={ticket.id}>
+                    <Table.Row 
+                      key={ticket.id}
+                      onClick={(e) => {
+                        // Don't open drawer if clicking on buttons or checkbox
+                        if (
+                          e.target instanceof HTMLElement &&
+                          (e.target.closest('button') || e.target.closest('input[type="checkbox"]'))
+                        ) {
+                          return;
+                        }
+                        handleOpenTicket(ticket);
+                      }}
+                      className="cursor-pointer hover:bg-neutral-50"
+                    >
                       <Table.Cell className="w-12">
                         <input
                           type="checkbox"

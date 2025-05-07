@@ -20,7 +20,6 @@ import { FeatherTrash } from "@subframe/core";
 import { TextField } from "@/ui/components/TextField";
 import { FeatherSearch } from "@subframe/core";
 import { IconWithBackground } from "@/ui/components/IconWithBackground";
-import { FeatherClock } from "@subframe/core";
 import { FeatherSend } from "@subframe/core";
 import { FeatherEdit } from "@subframe/core";
 
