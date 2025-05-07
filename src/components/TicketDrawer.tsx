@@ -60,8 +60,7 @@ interface TicketDrawerProps {
 
 export function TicketDrawer({ open, onOpenChange, ticket }: TicketDrawerProps) {
   const [draftReply, setDraftReply] = useState<string>(
-    ticket?.hasDraft
-      ? `Hi ${ticket?.sender.name},
+    `Hi ${ticket?.sender.name},
 
 Thank you for reaching out regarding ${ticket?.subject.toLowerCase()}. I understand your concern and will help you resolve this matter.
 
@@ -81,7 +80,6 @@ Please let me know if you have any additional information that might help us res
 
 Best regards,
 ${ticket?.assignedTo.name}`
-      : ''
   );
   const [isEditing, setIsEditing] = useState(true);
   const [chatInput, setChatInput] = useState('');
@@ -114,8 +112,6 @@ ${ticket?.assignedTo.name}`
   const handleMouseUp = () => {
     setIsDragging(false);
   };
-
-  if (!ticket) return null;
 
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
@@ -159,10 +155,17 @@ ${ticket?.assignedTo.name}`;
     setChatInput('');
   };
 
+  const handleSendReply = () => {
+    // TODO: Implement send reply logic
+    setIsEditing(false);
+  };
+
   const handleDiscardReply = () => {
     setDraftReply("");
     setIsEditing(false);
   };
+
+  if (!ticket) return null;
 
   return (
     <DrawerLayout open={open} onOpenChange={onOpenChange}>
@@ -243,7 +246,7 @@ ${ticket?.assignedTo.name}`;
         </div>
         <div className="flex w-full grow shrink-0 basis-0 items-start gap-6 px-6">
           <div className="flex grow shrink-0 basis-0 flex-col items-start gap-4">
-            {ticket.hasDraft && (
+            {ticket.hasDraft && draftReply && (
               <div className="flex w-full flex-col items-start gap-4 rounded-md border border-solid border-brand-200 bg-brand-50 px-4 py-4">
                 <div className="flex w-full items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -280,10 +283,7 @@ ${ticket?.assignedTo.name}`;
                     <Button
                       variant="brand-primary"
                       icon={<FeatherSend />}
-                      onClick={() => {
-                        // TODO: Handle sending message
-                        setIsEditing(false);
-                      }}
+                      onClick={handleSendReply}
                     >
                       Send Reply
                     </Button>

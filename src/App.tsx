@@ -10,7 +10,6 @@ import { FeatherSearch } from "@subframe/core";
 import { FeatherListFilter } from "@subframe/core";
 import { Tabs } from "@/ui/components/Tabs";
 import { FeatherMail } from "@subframe/core";
-import { FeatherClock4 } from "@subframe/core";
 import { FeatherCheckCircle } from "@subframe/core";
 import { Table } from "@/ui/components/Table";
 import { Avatar } from "@/ui/components/Avatar";
@@ -26,11 +25,7 @@ import { FeatherTarget } from "@subframe/core";
 import { FeatherX } from "@subframe/core";
 import { FeatherDownload } from "@subframe/core";
 import { FeatherClock } from "@subframe/core";
-import { FeatherCheck } from "@subframe/core";
 import { TicketDrawer, TicketData } from "./components/TicketDrawer";
-import { FeatherArrowUpRight } from "@subframe/core";
-import { FeatherPlus } from "@subframe/core";
-import { FeatherFilter } from "@subframe/core";
 import TriggerCreationPage from "./pages/TriggerCreationPage";
 
 function HelpdeskApp() {
@@ -1066,7 +1061,7 @@ Vendor Management Team`,
           <div className="flex w-full flex-col items-start gap-4">
             <div className="flex w-full flex-wrap items-center justify-between">
               <span className="text-heading-3 font-heading-3 text-default-font">
-                Inbox (34)
+                Inbox (23)
               </span>
               <div className="flex items-center gap-4">
                 <TextField
