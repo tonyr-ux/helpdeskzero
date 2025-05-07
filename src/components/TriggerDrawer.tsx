@@ -4,7 +4,6 @@ import React from "react";
 import { DrawerLayout } from "@/ui/layouts/DrawerLayout";
 import { TextField } from "@/ui/components/TextField";
 import { TextArea } from "@/ui/components/TextArea";
-import { Select } from "@/ui/components/Select";
 import { Switch } from "@/ui/components/Switch";
 import { Button } from "@/ui/components/Button";
 import { FeatherX } from "@subframe/core";
@@ -13,8 +12,6 @@ interface Trigger {
   id: string;
   name: string;
   pattern: string;
-  condition: string;
-  action: string;
   status: boolean;
 }
 
@@ -30,8 +27,6 @@ export function TriggerDrawer({ open, onOpenChange, trigger, onSave }: TriggerDr
     id: '',
     name: '',
     pattern: '',
-    condition: '',
-    action: '',
     status: false
   });
 
@@ -98,30 +93,6 @@ export function TriggerDrawer({ open, onOpenChange, trigger, onSave }: TriggerDr
                 handleInputChange('pattern', event.target.value)}
             />
           </TextArea>
-          <div className="flex w-full flex-wrap items-start gap-4">
-            <Select
-              label="Trigger Condition"
-              placeholder=""
-              helpText="When should this trigger activate"
-              value={formData.condition}
-              onValueChange={(value: string) => handleInputChange('condition', value)}
-            >
-              <Select.Item value="contains">contains</Select.Item>
-              <Select.Item value="exact">exact</Select.Item>
-              <Select.Item value="regex">regex</Select.Item>
-            </Select>
-            <Select
-              label="Action"
-              placeholder=""
-              helpText="What action should be taken"
-              value={formData.action}
-              onValueChange={(value: string) => handleInputChange('action', value)}
-            >
-              <Select.Item value="respond">respond</Select.Item>
-              <Select.Item value="notify">notify</Select.Item>
-              <Select.Item value="tag">tag</Select.Item>
-            </Select>
-          </div>
           <div className="flex w-full items-center justify-between">
             <div className="flex items-center gap-2">
               <Switch
